@@ -1,9 +1,25 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import {
+    Box,
+    Grid,
+    Card,
+    CardContent,
+    CardMedia,
+    Typography,
+    Button,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogActions,
+    TextField,
+    MenuItem,
+} from "@mui/material";
 
 const Products = () => {
     const [products, setProducts] = useState([]);
     const [categories, setCategories] = useState([]);
+    const [openDialog, setOpenDialog] = useState(false);
     const [formData, setFormData] = useState({
         name: "",
         description: "",
@@ -37,8 +53,7 @@ const Products = () => {
         setFormData({ ...formData, photos: e.target.files });
     };
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
+    const handleSubmit = async () => {
         const data = new FormData();
         Object.keys(formData).forEach((key) => {
             if (key === "photos") {
@@ -50,75 +65,136 @@ const Products = () => {
             }
         });
         await axios.post("/api/products", data);
+        setOpenDialog(false);
         fetchProducts();
     };
 
     return (
-        <div>
-            <h1>Products</h1>
-            <form onSubmit={handleSubmit}>
-                <input name="name" placeholder="Name" onChange={handleInputChange} />
-                <input name="description" placeholder="Description" onChange={handleInputChange} />
-                <select
-                    name="categoryIds"
-                    multiple
-                    onChange={(e) =>
-                        setFormData({
-                            ...formData,
-                            categoryIds: Array.from(e.target.selectedOptions).map((o) => o.value),
-                        })
-                    }
-                >
-                    {categories.map((cat) => (
-                        <option key={cat.id} value={cat.id}>
-                            {cat.name}
-                        </option>
-                    ))}
-                </select>
-                <input name="price" placeholder="Price" onChange={handleInputChange} />
-                <select name="status" onChange={handleInputChange}>
-                    <option value="ACTIVE">ACTIVE</option>
-                    <option value="INACTIVE">INACTIVE</option>
-                </select>
-                <input type="file" multiple onChange={handleFileChange} />
-                <button type="submit">Create Product</button>
-            </form>
-            <table>
-                <thead>
-                <tr>
-                    <th>Name</th>
-                    <th>Description</th>
-                    <th>Price</th>
-                    <th>Status</th>
-                    <th>Photos</th>
-                </tr>
-                </thead>
-                <tbody>
+        <Box sx={{ padding: 4 }}>
+            <Typography variant="h4" sx={{ marginBottom: 4 }}>
+                Manage Products
+            </Typography>
+            <Button
+                variant="contained"
+                color="primary"
+                onClick={() => setOpenDialog(true)}
+            >
+                Add Product
+            </Button>
+
+            {/* Product Grid */}
+            <Grid container spacing={4} sx={{ marginTop: 2 }}>
                 {products.map((product) => (
-                    <tr key={product.id}>
-                        <td>{product.name}</td>
-                        <td>{product.description}</td>
-                        <td>{product.price}</td>
-                        <td>{product.status}</td>
-                        <td>
-                            {product.photos && product.photos.length > 0 ? (
-                                product.photos.map((photo, index) => (
-                                    <img
-                                        key={index}
-                                        src={photo}
-                                        alt={`Product ${product.name}`}
-                                        style={{ width: "50px", height: "50px", marginRight: "5px" }}
-                                    />
-                                ))
-                            ) : (
-                                <span>No Photos</span>
-                            )}
-                        </td>
-                    </tr>
+                    <Grid item xs={12} sm={6} md={4} key={product.id}>
+                        <Card>
+                            <CardMedia
+                                component="img"
+                                height="200"
+                                image={product.photos && product.photos.length > 0 ? product.photos[0] : "/no-image.jpg"}
+                                alt={product.name}
+                            />
+                            <CardContent>
+                                <Typography variant="h6">{product.name}</Typography>
+                                <Typography variant="body2" color="textSecondary">
+                                    {product.description}
+                                </Typography>
+                                <Typography variant="body1" sx={{ marginTop: 1 }}>
+                                    Price: ${product.price}
+                                </Typography>
+                                <Typography variant="body2" color="textSecondary">
+                                    Status: {product.status}
+                                </Typography>
+                            </CardContent>
+                            <Button
+                                variant="contained"
+                                color="secondary"
+                                onClick={() => axios.delete(`/api/products/${product.id}`).then(fetchProducts)}
+                                sx={{ margin: 2 }}
+                            >
+                                Delete
+                            </Button>
+                        </Card>
+                    </Grid>
                 ))}
-                </tbody>
-            </table>
-        </div>
+            </Grid>
+
+            {/* Add Product Dialog */}
+            <Dialog open={openDialog} onClose={() => setOpenDialog(false)}>
+                <DialogTitle>Add New Product</DialogTitle>
+                <DialogContent>
+                    <TextField
+                        fullWidth
+                        margin="normal"
+                        label="Name"
+                        name="name"
+                        onChange={handleInputChange}
+                    />
+                    <TextField
+                        fullWidth
+                        margin="normal"
+                        label="Description"
+                        name="description"
+                        onChange={handleInputChange}
+                    />
+                    <TextField
+                        select
+                        fullWidth
+                        margin="normal"
+                        label="Categories"
+                        name="categoryIds"
+                        SelectProps={{
+                            multiple: true,
+                            value: formData.categoryIds,
+                            onChange: (e) =>
+                                setFormData({
+                                    ...formData,
+                                    categoryIds: Array.from(e.target.selectedOptions).map(
+                                        (option) => option.value
+                                    ),
+                                }),
+                        }}
+                    >
+                        {categories.map((cat) => (
+                            <MenuItem key={cat.id} value={cat.id}>
+                                {cat.name}
+                            </MenuItem>
+                        ))}
+                    </TextField>
+                    <TextField
+                        fullWidth
+                        margin="normal"
+                        label="Price"
+                        name="price"
+                        type="number"
+                        onChange={handleInputChange}
+                    />
+                    <TextField
+                        select
+                        fullWidth
+                        margin="normal"
+                        label="Status"
+                        name="status"
+                        value={formData.status}
+                        onChange={handleInputChange}
+                    >
+                        <MenuItem value="ACTIVE">ACTIVE</MenuItem>
+                        <MenuItem value="INACTIVE">INACTIVE</MenuItem>
+                    </TextField>
+                    <Button variant="contained" component="label">
+                        Upload Photos
+                        <input type="file" hidden multiple onChange={handleFileChange} />
+                    </Button>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setOpenDialog(false)} color="secondary">
+                        Cancel
+                    </Button>
+                    <Button onClick={handleSubmit} color="primary">
+                        Add
+                    </Button>
+                </DialogActions>
+            </Dialog>
+        </Box>
     );
 };
 
