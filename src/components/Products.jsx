@@ -11,15 +11,14 @@ import {
     Dialog,
     DialogTitle,
     DialogContent,
-    DialogActions,
-    TextField,
-    MenuItem,
 } from "@mui/material";
+import { Link } from "react-router-dom";
+import ProductForm from "./ProductForm";
 
 const Products = () => {
-    const [products, setProducts] = useState([]);
-    const [categories, setCategories] = useState([]);
-    const [openDialog, setOpenDialog] = useState(false);
+    const [products, setProducts] = useState([]); // Список продуктов
+    const [categories, setCategories] = useState([]); // Список категорий
+    const [openDialog, setOpenDialog] = useState(false); // Открытие/закрытие диалога
     const [formData, setFormData] = useState({
         name: "",
         description: "",
@@ -27,7 +26,7 @@ const Products = () => {
         price: "",
         status: "ACTIVE",
         photos: null,
-    });
+    }); // Данные формы
 
     useEffect(() => {
         fetchProducts();
@@ -35,22 +34,21 @@ const Products = () => {
     }, []);
 
     const fetchProducts = async () => {
-        const response = await axios.get("/api/products");
-        setProducts(response.data);
+        try {
+            const response = await axios.get("/api/products");
+            setProducts(response.data);
+        } catch (error) {
+            console.error("Error fetching products:", error);
+        }
     };
 
     const fetchCategories = async () => {
-        const response = await axios.get("/api/categories");
-        setCategories(response.data);
-    };
-
-    const handleInputChange = (e) => {
-        const { name, value } = e.target;
-        setFormData({ ...formData, [name]: value });
-    };
-
-    const handleFileChange = (e) => {
-        setFormData({ ...formData, photos: e.target.files });
+        try {
+            const response = await axios.get("/api/categories");
+            setCategories(response.data);
+        } catch (error) {
+            console.error("Error fetching categories:", error);
+        }
     };
 
     const handleSubmit = async () => {
@@ -64,9 +62,13 @@ const Products = () => {
                 data.append(key, formData[key]);
             }
         });
-        await axios.post("/api/products", data);
-        setOpenDialog(false);
-        fetchProducts();
+        try {
+            await axios.post("/api/products", data);
+            setOpenDialog(false);
+            fetchProducts(); // Обновление списка продуктов
+        } catch (error) {
+            console.error("Error adding product:", error);
+        }
     };
 
     return (
@@ -90,7 +92,11 @@ const Products = () => {
                             <CardMedia
                                 component="img"
                                 height="200"
-                                image={product.photos && product.photos.length > 0 ? product.photos[0] : "/no-image.jpg"}
+                                image={
+                                    product.photos && product.photos.length > 0
+                                        ? product.photos[0]
+                                        : "/no-image.jpg"
+                                }
                                 alt={product.name}
                             />
                             <CardContent>
@@ -106,12 +112,13 @@ const Products = () => {
                                 </Typography>
                             </CardContent>
                             <Button
-                                variant="contained"
-                                color="secondary"
-                                onClick={() => axios.delete(`/api/products/${product.id}`).then(fetchProducts)}
+                                variant="outlined"
+                                color="primary"
+                                component={Link}
+                                to={`/products/${product.id}`}
                                 sx={{ margin: 2 }}
                             >
-                                Delete
+                                View Details
                             </Button>
                         </Card>
                     </Grid>
@@ -122,77 +129,14 @@ const Products = () => {
             <Dialog open={openDialog} onClose={() => setOpenDialog(false)}>
                 <DialogTitle>Add New Product</DialogTitle>
                 <DialogContent>
-                    <TextField
-                        fullWidth
-                        margin="normal"
-                        label="Name"
-                        name="name"
-                        onChange={handleInputChange}
+                    <ProductForm
+                        formData={formData}
+                        setFormData={setFormData}
+                        categories={categories} // Передаём категории
+                        onSubmit={handleSubmit} // Обработка отправки формы
+                        submitButtonLabel="Add Product"
                     />
-                    <TextField
-                        fullWidth
-                        margin="normal"
-                        label="Description"
-                        name="description"
-                        onChange={handleInputChange}
-                    />
-                    <TextField
-                        select
-                        fullWidth
-                        margin="normal"
-                        label="Categories"
-                        name="categoryIds"
-                        SelectProps={{
-                            multiple: true,
-                            value: formData.categoryIds,
-                            onChange: (e) =>
-                                setFormData({
-                                    ...formData,
-                                    categoryIds: Array.from(e.target.selectedOptions).map(
-                                        (option) => option.value
-                                    ),
-                                }),
-                        }}
-                    >
-                        {categories.map((cat) => (
-                            <MenuItem key={cat.id} value={cat.id}>
-                                {cat.name}
-                            </MenuItem>
-                        ))}
-                    </TextField>
-                    <TextField
-                        fullWidth
-                        margin="normal"
-                        label="Price"
-                        name="price"
-                        type="number"
-                        onChange={handleInputChange}
-                    />
-                    <TextField
-                        select
-                        fullWidth
-                        margin="normal"
-                        label="Status"
-                        name="status"
-                        value={formData.status}
-                        onChange={handleInputChange}
-                    >
-                        <MenuItem value="ACTIVE">ACTIVE</MenuItem>
-                        <MenuItem value="INACTIVE">INACTIVE</MenuItem>
-                    </TextField>
-                    <Button variant="contained" component="label">
-                        Upload Photos
-                        <input type="file" hidden multiple onChange={handleFileChange} />
-                    </Button>
                 </DialogContent>
-                <DialogActions>
-                    <Button onClick={() => setOpenDialog(false)} color="secondary">
-                        Cancel
-                    </Button>
-                    <Button onClick={handleSubmit} color="primary">
-                        Add
-                    </Button>
-                </DialogActions>
             </Dialog>
         </Box>
     );
