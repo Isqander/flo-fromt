@@ -1,51 +1,44 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { Box, Typography, Button, List, ListItem, ListItemText } from "@mui/material";
 
 const Categories = () => {
     const [categories, setCategories] = useState([]);
-    const [categoryName, setCategoryName] = useState("");
 
     useEffect(() => {
         fetchCategories();
     }, []);
 
     const fetchCategories = async () => {
-        const response = await axios.get("/api/categories");
-        setCategories(response.data);
-    };
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        await axios.post("/api/categories", { name: categoryName });
-        setCategoryName("");
-        fetchCategories();
-    };
-
-    const handleDelete = async (id) => {
-        await axios.delete(`/api/categories/${id}`);
-        fetchCategories();
+        try {
+            const response = await axios.get("/api/categories");
+            setCategories(response.data);
+        } catch (error) {
+            console.error("Error fetching categories:", error);
+        }
     };
 
     return (
-        <div>
-            <h1>Categories</h1>
-            <form onSubmit={handleSubmit}>
-                <input
-                    placeholder="Category Name"
-                    value={categoryName}
-                    onChange={(e) => setCategoryName(e.target.value)}
-                />
-                <button type="submit">Add Category</button>
-            </form>
-            <ul>
+        <Box sx={{ padding: 4 }}>
+            <Typography variant="h4" sx={{ marginBottom: 4 }}>
+                Manage Categories
+            </Typography>
+            <Button
+                variant="contained"
+                color="primary"
+                onClick={() => alert("Add Category functionality here")}
+                sx={{ marginBottom: 4 }}
+            >
+                Add Category
+            </Button>
+            <List>
                 {categories.map((category) => (
-                    <li key={category.id}>
-                        {category.name}{" "}
-                        <button onClick={() => handleDelete(category.id)}>Delete</button>
-                    </li>
+                    <ListItem key={category.id}>
+                        <ListItemText primary={category.name} />
+                    </ListItem>
                 ))}
-            </ul>
-        </div>
+            </List>
+        </Box>
     );
 };
 
