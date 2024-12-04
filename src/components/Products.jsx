@@ -90,6 +90,7 @@ const Products = () => {
                     <th>Description</th>
                     <th>Price</th>
                     <th>Status</th>
+                    <th>Photos</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -99,6 +100,20 @@ const Products = () => {
                         <td>{product.description}</td>
                         <td>{product.price}</td>
                         <td>{product.status}</td>
+                        <td>
+                            {product.photos && product.photos.length > 0 ? (
+                                product.photos.map((photo, index) => (
+                                    <img
+                                        key={index}
+                                        src={photo}
+                                        alt={`Product ${product.name}`}
+                                        style={{ width: "50px", height: "50px", marginRight: "5px" }}
+                                    />
+                                ))
+                            ) : (
+                                <span>No Photos</span>
+                            )}
+                        </td>
                     </tr>
                 ))}
                 </tbody>
